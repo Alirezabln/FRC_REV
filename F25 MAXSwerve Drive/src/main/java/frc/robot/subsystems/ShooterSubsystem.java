@@ -20,8 +20,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final SparkFlex m_rightMotor;
   private final SparkClosedLoopController m_leftController;
   private final SparkClosedLoopController m_rightController;
-  //private static final int currentLimit = 80;
-  //config.currentLimit = 40; // Example current limit
+  private static final int CURRENT_LIMIT_AMPS = 80;
 
   //Motor constants
   private static final int LEFT_CAN_ID = 22; //I don't remember these lol
@@ -61,16 +60,20 @@ public ShooterSubsystem() {
 
     // configure MAXMotion (motion profiling)
     config.closedLoop.maxMotion
-        .cruiseVelocity(double RPM_TARGET, ClosedLoopSlot kSlot0)
+        .maxVelocity(RPM_TARGET, com.revrobotics.spark.ClosedLoopSlot.kSlot0)
         .maxAcceleration(5000, com.revrobotics.spark.ClosedLoopSlot.kSlot0)
-        .allowedProfileError( TOLERANCE_RPM, com.revrobotics.spark.ClosedLoopSlot.kSlot0 );
+        .allowedClosedLoopError( TOLERANCE_RPM, com.revrobotics.spark.ClosedLoopSlot.kSlot0 );
+
+    // Set current limit
+    config.smartCurrentLimit(CURRENT_LIMIT_AMPS);
 
     // Apply config to both motors
     m_leftMotor.configure(config, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, com.revrobotics.spark.SparkBase.PersistMode.kPersistParameters);
     m_rightMotor.configure(config, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, com.revrobotics.spark.SparkBase.PersistMode.kPersistParameters);
-
+    
     // Make right motor follow left motor or invert (check the configuration of the motors I forgor :skull:)
-    m_rightMotor.follow(m_leftMotor, true); 
+    m_rightMotor.setInverted(true); // Invert the right motor
+    m_rightMotor.set(m_leftMotor.get()); // Manually synchronize with the left motor
 
     SmartDashboard.putNumber("Shooter Target RPM", RPM_TARGET);
     SmartDashboard.putNumber("Shooter Actual RPM", 0.0);
@@ -88,7 +91,7 @@ public ShooterSubsystem() {
   /** Spin the shooter motors to the target RPM. */
   public void spinUp(double rpm) {
     SmartDashboard.putNumber("Shooter Target RPM", rpm);
-    m_leftController.setSetpoint(rpm, com.revrobotics.spark.SparkBase.ControlType.kVelocity, com.revrobotics.spark.ClosedLoopSlot.kSlot0);
+    m_leftController.setReference(rpm, com.revrobotics.spark.SparkBase.ControlType.kVelocity, com.revrobotics.spark.ClosedLoopSlot.kSlot0);
   }
 
   /** Stop the shooter motors. */

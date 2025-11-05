@@ -1,0 +1,28 @@
+public class FeedShooterIfReadyCommand extends CommandBase {
+  private final ShooterSubsystem shooter;
+  private final QueuerSubsystem queuer;
+
+  public FeedShooterIfReadyCommand(ShooterSubsystem shooter, QueuerSubsystem queuer) {
+    this.shooter = shooter;
+    this.queuer = queuer;
+    addRequirements(queuer);
+  }
+
+  @Override
+  public void initialize() {
+    if (shooter.isAtSpeed()) {
+      queuer.feed();
+    }
+  }
+
+  @Override
+  public void end(boolean interrupted) {
+    queuer.stop();
+  }
+
+  @Override
+  public boolean isFinished() {
+    // only run for a short pulse OR make this a hold-based command
+    return true;
+  }
+}
